@@ -4,7 +4,7 @@ m=1.0;Ix=0.0025;Iy=0.0025;Iz=0.0045;d=0.17;g=9.8;
 cR=1250;omegab=0;Tm=0.05;cT=5*1e-6;cM=2.5*1e-7;
 x0=zeros(13,1);%13个状态量
 %x,y,z,q0,q1,q2,q3,x_d,y_d,z_d,p,q,r
-x0(4)=1;%q0=1;
+x0(4)=1;%初始时q0=1;
 omega0=zeros(4,1);
 X0=[x0;omega0];
 scenario=2;
@@ -25,7 +25,6 @@ switch scenario
     case 4
     fprintf('场景4：恒定偏航力矩\n');
     Sigma=@(t)[0.56057; 0.55943; 0.56057; 0.55943];
-
 
 end
 
@@ -74,20 +73,21 @@ plot(t, x(:,8:10),'LineWidth',1.2); grid on;
 xlabel('t [s]'); ylabel('速度 [m/s]');
 legend('x\_d','y\_d','z\_d','Location','best'); 
 title('速度');
+
 fprintf('       t           x         y         z        phi      theta      psi\n');
+% 每隔 50 个数据点（即 0.5 秒）提取一次索引
+idx = 1:50:length(t); 
 
-
-disp([t,x(:,1:3),phi*180/pi,theta*180/pi,psi*180/pi])
-
-
-    function dxdt=UAV_ode(t,X)
-
+% 打印提取出来的数据
+disp([t(idx), x(idx,1:3), phi(idx)*180/pi, theta(idx)*180/pi, psi(idx)*180/pi])
+%微分方程
+function dxdt=UAV_ode(t,X)
 q0=X(4);q1=X(5);q2=X(6);q3=X(7);
 x_d=X(8);y_d=X(9);z_d=X(10);
 p=X(11);q=X(12);r=X(13);
 omega1=X(14);omega2=X(15);omega3=X(16);omega4=X(17);
 omega=[omega1;omega2;omega3;omega4];
-
+%控制分配矩阵
     B=[cT cT cT cT 
         -sqrt(2)*d*cT/2 -sqrt(2)*d*cT/2 sqrt(2)*d*cT/2 sqrt(2)*d*cT/2
         sqrt(2)*d*cT/2 -sqrt(2)*d*cT/2 -sqrt(2)*d*cT/2 sqrt(2)*d*cT/2
@@ -97,6 +97,7 @@ omega=[omega1;omega2;omega3;omega4];
     U=B*squareomega;
     omega_d=(-omega+omegass)/Tm;%一阶惯性环节
 omega1_d=omega_d(1);omega2_d=omega_d(2);omega3_d=omega_d(3);omega4_d=omega_d(4);
+%四元数归一化
 Q=[q0;q1;q2;q3];
 mode=sqrt(Q'*Q);
 q0=q0/mode;
@@ -106,6 +107,7 @@ q3=q3/mode;
 
 U1=U(1);U2=U(2);U3=U(3);U4=U(4);
 Q=[q0;q1;q2;q3];
+%四元数运动学微分方程
 Q_d=[0 -p -q -r
     p 0 r -q
     q -r 0 p
@@ -116,19 +118,17 @@ q1_d=Q_d(2);
 q2_d=Q_d(3);
 q3_d=Q_d(4);
 
-
+%刚体动力学方程
 x_dd=-U1*2*(q1*q3+q0*q2)/m;
-
 y_dd=-U1*2*(q2*q3-q0*q1)/m;
-
 
 p_d=(U2+(Iy-Iz)*q*r)/Ix;
 q_d=(U3+(Iz-Ix)*p*r)/Iy;
 r_d=(U4+(Ix-Iy)*p*q)/Iz;
-
+%当飞行器受到地面支持力作用时，z轴正方向速度与加速度为0
 if X(3) >= 0 && (U1*(1-2*q1^2-2*q2^2) <= m*g)
-
 z_dd=0;
+z_d=0;
 else
 z_dd=g-U1*(1-2*q1^2-2*q2^2)/m;
 end
@@ -137,7 +137,7 @@ end
     x_dd;y_dd;z_dd;
     p_d;q_d;r_d;omega1_d;omega2_d;omega3_d;omega4_d];
 end
-
+%工况一所使用的σ变化规律
     function sigmahover=hover(t)
         if t<2.85
             s=0.58;
