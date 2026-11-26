@@ -7,7 +7,7 @@ x0=zeros(13,1);%13个状态量
 x0(4)=1;%初始时q0=1;
 omega0=zeros(4,1);
 X0=[x0;omega0];
-scenario=2;
+scenario=4;
 
 switch scenario
     case 1
@@ -20,11 +20,11 @@ switch scenario
 
     case 3
     fprintf('场景3：恒定俯仰力矩\n');
-    Sigma=@(t)[0.56023; 0.55977; 0.55977; 0.56023];
+    Sigma=@(t)[0.56005; 0.55995; 0.55995; 0.56005];
 
     case 4
     fprintf('场景4：恒定偏航力矩\n');
-    Sigma=@(t)[0.56057; 0.55943; 0.56057; 0.55943];
+    Sigma=@(t)[0.56157; 0.56043; 0.56157; 0.56043];
 
 end
 
